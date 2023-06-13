@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='chota.css') }}">
+
+  <style>
+    body.dark {
+      --bg-color: #000;
+      --bg-secondary-color: #131316;
+      --font-color: #f5f5f5;
+      --color-grey: #ccc;
+      --color-darkGrey: #777;
+    }
+
+    .is-circle {
+      border-radius: 1000px;
+      height: 8vw;
+      width: 8vw;
+      padding-top: 3.3vw;
+    }
+
+
+    .is-narrow {
+      flex: none;
+      width: unset;
+    }
+
+    .narrow-col {
+      width: 200px;text-align: end;
+    }
+
+
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-left">
+      <a class="brand" href="#">Brand</a>
+      <a class="button outline">Button</a>
+      <div class="tabs">
+        <a>Link 1</a>
+        <a class="active">Link 2</a>
+      </div>
+    </div>
+    <!-- <div class="nav-right">
+    </div> -->
+  </nav>
+
+  <script type="text/javascript" src="{{ url_for('static', filename='vue.global.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='chart.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='luxon.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='chartjs-adapter-luxon.js') }}"></script>
+
+  <style>
+    body.dark {
+      --bg-color: #000;
+      --bg-secondary-color: #131316;
+      --font-color: #f5f5f5;
+      --color-grey: #ccc;
+      --color-darkGrey: #777;
+    }
+  </style>
+  <script>
+    if (window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.body.classList.add('dark');
+    }
+    document.body.classList.add('dark');
+  </script>
+
+  <div id="app">
+    <div class="row" style="margin-top: 20px;margin-left: 20px;margin-right: 20px;">
+      <div class="col-5 card">
+        
+        <div class="row">
+          <div class="col is-narrow narrow-col">Gravação de dados</div>
+          <div class="col"><span class="tag" :class="{'bg-error': gravacaoDeDados, 'bg-success': !gravacaoDeDados}">[[ gravacaoDeDados ? "LIGADA" : "DESLIGADA"]]</span></div>
+        </div>
+
+        <div class="row">
+          <div class="col is-narrow narrow-col">Tempo total</div>
+          <div class="col"><span class="tag bg-error">0h0min</span></div>
+        </div>
+
+        <div class="row">
+          <div class="col is-narrow narrow-col">Modo</div>
+          <div class="col"><span class="tag" :class="{'bg-error': !modoAuto, 'bg-success': modoAuto}">[[ modoAuto ? "AUTO" : "MANUAL" ]]</span></div>
+        </div>
+
+        <div class="row">
+          <div class="col is-narrow narrow-col">Leitura do canal</div>
+          <div class="col"><span class="tag bg-dark">10ml</span></div>
+        </div>
+
+        <div class="row">
+          <div class="col is-narrow narrow-col">Temperatura da água</div>
+          <div class="col"><span class="tag bg-dark">19 oC</span></div>
+        </div>
+
+        <div class="row">
+          <div class="col is-narrow narrow-col">Temperatura ambiente</div>
+          <div class="col"><span class="tag bg-dark">23 oC</span></div>
+        </div>
+
+        
+      </div>
+      <div class="col">
+        <div class="card" style="background: #1f53b1;">
+          <header>
+            <h4 class="text-center">Temperatura ambiente</h4>
+          </header>
+          
+          <div class="row text-center">
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+          </div>
+          
+          <div class="row text-center">
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle">x</span>
+            </div><div class="col">
+              <span class="tag is-circle">x</span>
+            </div><div class="col">
+              <span class="tag is-circle">x</span>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+
+    <div v-for="channel in channels" :key="channel.id">
+      <canvas v-show="channel.id === activeChannelId" :ref="channel.id"></canvas>
+    </div>
+
+  </div>
+  
+  <script>
+    const { createApp } = Vue
+    CHARTS = {}
+
+    createApp({
+      data() {
+        return {
+          activeChannelId: null,
+          gravacaoDeDados: false,
+          tempoTotal: null,
+          modoAuto: true,
+          // leituraDoCanal: null,
+          // temperaturaDaAgua: null,
+          // temperaturaAmbiete: null,
+          channels: [
+            {
+              id: "ch1",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch2",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch3",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch4",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch5",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch6",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch7",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch8",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch9",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
+              id: "ch10",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+          ],
+        }
+      },
+      mounted() {
+        this.channels.forEach(channel => {
+          this.creatChart(channel)
+          
+        })
+
+        fetch('/api/events')
+        .then(res => res.json())
+        .then(eventObjArray => {
+          eventObjArray.forEach(this.handleEvent)
+          
+          // aguarda eventos
+          const evtSource = new EventSource("/api/stream");
+          evtSource.onerror = (e) => {
+            // console.log(e)
+          }
+          evtSource.onmessage = (e) => {
+            let eventObj = JSON.parse(e.data)
+            this.handleEvent(eventObj)
+          };
+        })
+      },
+      methods: {
+        creatChart (channel) {
+          const ctx = this.$refs[channel.id]
+          CHARTS[channel.id] = new Chart(ctx, {
+            type: 'line',
+            responsive: true,
+            data: {
+              datasets: [{
+                label: '# of Votes',
+                // data: new Array(5).fill().map((_, i) => [Date.now()+i, Math.random()]),
+                data: [],
+                borderWidth: 1
+              }]
+            },
+            options: {
+              plugins: {
+                legend: {
+                  display: false
+                },
+                title: {
+                  display: true,
+                  text: channel.id
+                  // padding: {
+                  //   top: 10,
+                  //   bottom: 30
+                  // }
+                }
+              },
+              scales: {
+                x: {
+                  // The axis for this scale is determined from the first letter of the id as `'x'`
+                  // It is recommended to specify `position` and / or `axis` explicitly.
+                  type: 'time',
+                  ticks: {
+                    callback: function(value) { 
+                      // return new Date(value).toLocaleTimeString('pt-Br', {day: 'numeric', month: 'numeric', year:'numeric'})
+                      return new Date(value).toLocaleTimeString('pt-Br') // 02:02:22
+                    },
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'value'
+                  }
+                }
+              }
+            }
+          });
+        },
+        handleEvent (eventObj) {
+          Object.assign(this, eventObj)
+          console.log(eventObj, this)
+
+        }
+      },
+      delimiters: ["[[", "]]"],
+    }).mount('#app')
+  </script>
+
+
+  <script>
+    // aplicar tema escuro
+    //if (window.matchMedia &&
+    //    window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    //  document.body.classList.add('dark');
+    //}
+  </script>
+</body>
+</html>
