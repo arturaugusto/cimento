@@ -167,6 +167,12 @@
           // temperaturaAmbiete: null,
           channels: [
             {
+              id: "ch0",
+              type: "lvdt",
+              chart: null,
+              eq: '',
+            },
+            {
               id: "ch1",
               type: "lvdt",
               chart: null,
@@ -220,12 +226,6 @@
               chart: null,
               eq: '',
             },
-            {
-              id: "ch10",
-              type: "lvdt",
-              chart: null,
-              eq: '',
-            },
           ],
         }
       },
@@ -234,7 +234,6 @@
           this.creatChart(channel)
           
         })
-
         fetch('/api/events')
         .then(res => res.json())
         .then(eventObjArray => {
@@ -254,6 +253,7 @@
       methods: {
         creatChart (channel) {
           const ctx = this.$refs[channel.id]
+          console.log(ctx)
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
             responsive: true,

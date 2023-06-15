@@ -1,4 +1,5 @@
 import time
+import json
 from datetime import datetime
 import RPi.GPIO as GPIO 
 from pipyadc import ADS1256
@@ -23,28 +24,47 @@ SAIDAS = {
   "EXECUTA_LEITURA": 5
 }
 
+# inicializa ADC
+ads = ADS1256(waveshare_config)
+ads.drate = DRATE_30000
+#ads.drate = DRATE_2000
+#ads.drate = DRATE_15
+
+def append_to_data(obj):
+  with open("data.txt", "a") as myfile:
+    myfile.write(json.dumps(obj)+'\n')
 
 def leitura_adc():
-  with ADS1256(waveshare_config) as ads:
-    ads.drate = DRATE_30000
-    #ads.drate = DRATE_15
-    # Gain and offset self-calibration can be triggered at any time
-    ads.cal_self()
-    # Returns list of integers, one result for each configured channel
-    raw_channels = ads.read_sequence((ADC_DIFF,))
-    #raw_channels = ads.read_continue(CH_SEQUENCE)
-    # Text-mode output
-    voltages = [i * ads.v_per_digit for i in raw_channels]
-    print(voltages[0])
+  # Gain and offset self-calibration can be triggered at any time
+  ads.cal_self()
+  # Returns list of integers, one result for each configured channel
+  raw_channels = ads.read_sequence((ADC_DIFF,))
+  #raw_channels = ads.read_continue(CH_SEQUENCE)
+  # Text-mode output
+  voltages = [i * ads.v_per_digit for i in raw_channels]
+  print(voltages[0])
 
 
-#def modo_automatico(pin):
-#  if not GPIO.input(pin):
-#    print('modo automatico')
-#  else:
-#    print('modo manual')
-#GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
-#GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
+def modo_automatico(pin):
+  if not GPIO.input(pin):
+    print('modo automatico')
+  else:
+    print('modo manual')
+  append_to_data({"modoAuto": GPIO.input(pin)})
+GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
+
+
+def gravacao(pin):
+  if GPIO.input(pin):
+    print('grava')
+  else:
+    print('nao grava')
+  append_to_data({"gravacaoDeDados": GPIO.input(pin)})
+
+GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_callback(SAIDAS["GRAVACAO"], gravacao)
+
 
 
 def ciclo_canal(pin):
@@ -59,6 +79,7 @@ def ciclo_canal(pin):
     print('\n')
     print('ciclo_canal prepara')
     print(f'Estamos no canal: {addr}')
+    append_to_data({"activeChannelId": f"ch{addr}"})
   else:
     print('ciclo_canal ativa')
     print(f'Vamos realizar a leitura do canal {addr}...')
@@ -67,15 +88,6 @@ def ciclo_canal(pin):
 
 GPIO.add_event_detect(SAIDAS["CICLO_CANAL"], GPIO.BOTH, bouncetime=200)
 GPIO.add_event_callback(SAIDAS["CICLO_CANAL"], ciclo_canal)
-
-
-def gravacao(pin):
-  if GPIO.input(pin):
-    print('grava')
-  else:
-    print('nao grava')
-GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=200)
-GPIO.add_event_callback(SAIDAS["GRAVACAO"], gravacao)
 
 
 def executa_leitura(pin):
