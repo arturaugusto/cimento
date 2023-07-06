@@ -51,7 +51,7 @@ def modo_automatico(pin):
   else:
     print('modo manual')
   append_to_data({"modoAuto": GPIO.input(pin)})
-GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=20)
 GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
 
 
@@ -62,7 +62,7 @@ def gravacao(pin):
     print('nao grava')
   append_to_data({"gravacaoDeDados": GPIO.input(pin)})
 
-GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=20)
 GPIO.add_event_callback(SAIDAS["GRAVACAO"], gravacao)
 
 
@@ -79,14 +79,18 @@ def ciclo_canal(pin):
     print('\n')
     print('ciclo_canal prepara')
     print(f'Estamos no canal: {addr}')
-    append_to_data({"activeChannelId": f"ch{addr}"})
+    # notamos que se a chave auto/manual for alterada ao mesmo tempo que o pulso do canal é enviado,
+    # a status do modo auto/manual é detectado errado. 
+    # Como solução, esperamos um tempo e conferimos a saída do modo auto/manual    
+    time.sleep(0.05)
+    append_to_data({"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"])})
   else:
     print('ciclo_canal ativa')
     print(f'Vamos realizar a leitura do canal {addr}...')
 
 
 
-GPIO.add_event_detect(SAIDAS["CICLO_CANAL"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_detect(SAIDAS["CICLO_CANAL"], GPIO.BOTH, bouncetime=20)
 GPIO.add_event_callback(SAIDAS["CICLO_CANAL"], ciclo_canal)
 
 
@@ -101,14 +105,14 @@ def executa_leitura(pin):
   leitura_adc()
 
     
-GPIO.add_event_detect(SAIDAS["EXECUTA_LEITURA"], GPIO.RISING, bouncetime=200)
+GPIO.add_event_detect(SAIDAS["EXECUTA_LEITURA"], GPIO.RISING, bouncetime=20)
 GPIO.add_event_callback(SAIDAS["EXECUTA_LEITURA"], executa_leitura)
 
 
 def main():
   prev_output = []
   while True:
-    time.sleep(5)
+    time.sleep(1)
 
 if __name__ == '__main__':
   main()
