@@ -1,6 +1,5 @@
 import time
 import json
-from datetime import datetime
 import RPi.GPIO as GPIO 
 from pipyadc import ADS1256
 from pipyadc.ADS1256_definitions import *
@@ -32,6 +31,9 @@ ads.drate = DRATE_30000
 
 def append_to_data(obj):
   with open("data.txt", "a") as myfile:
+    #obj['t'] = datetime.now().isoformat()
+    #obj['t'] = datetime.utcnow().isoformat()
+    obj['t'] = round(time.time()*1000)
     myfile.write(json.dumps(obj)+'\n')
 
 def leitura_adc():
@@ -42,7 +44,7 @@ def leitura_adc():
   #raw_channels = ads.read_continue(CH_SEQUENCE)
   # Text-mode output
   voltages = [i * ads.v_per_digit for i in raw_channels]
-  print(voltages[0])
+  append_to_data({"read": round(voltages[0], 5)})
 
 
 def modo_automatico(pin):
@@ -51,7 +53,7 @@ def modo_automatico(pin):
   else:
     print('modo manual')
   append_to_data({"modoAuto": GPIO.input(pin)})
-GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=20)
+GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
 GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
 
 
@@ -62,7 +64,7 @@ def gravacao(pin):
     print('nao grava')
   append_to_data({"gravacaoDeDados": GPIO.input(pin)})
 
-GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=20)
+GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=200)
 GPIO.add_event_callback(SAIDAS["GRAVACAO"], gravacao)
 
 
@@ -85,12 +87,13 @@ def ciclo_canal(pin):
     time.sleep(0.05)
     append_to_data({"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"])})
   else:
-    print('ciclo_canal ativa')
-    print(f'Vamos realizar a leitura do canal {addr}...')
+    pass
+    #print('ciclo_canal ativa')
+    #print(f'Vamos realizar a leitura do canal {addr}...')
 
 
 
-GPIO.add_event_detect(SAIDAS["CICLO_CANAL"], GPIO.BOTH, bouncetime=20)
+GPIO.add_event_detect(SAIDAS["CICLO_CANAL"], GPIO.BOTH, bouncetime=200)
 GPIO.add_event_callback(SAIDAS["CICLO_CANAL"], ciclo_canal)
 
 
@@ -105,7 +108,7 @@ def executa_leitura(pin):
   leitura_adc()
 
     
-GPIO.add_event_detect(SAIDAS["EXECUTA_LEITURA"], GPIO.RISING, bouncetime=20)
+GPIO.add_event_detect(SAIDAS["EXECUTA_LEITURA"], GPIO.RISING, bouncetime=200)
 GPIO.add_event_callback(SAIDAS["EXECUTA_LEITURA"], executa_leitura)
 
 
