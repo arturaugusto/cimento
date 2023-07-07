@@ -115,29 +115,39 @@
           
           <div class="row text-center">
             <div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}">x</span>
             </div>
             <div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch1'}">x</span>
             </div>
             <div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch2'}">x</span>
             </div>
             <div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch3'}">x</span>
+            </div>
+          </div>
+          <div class="row text-center">
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch8'}">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch9'}">x</span>
             </div>
           </div>
           
           <div class="row text-center">
             <div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch4'}">x</span>
             </div>
             <div class="col">
-              <span class="tag is-circle">x</span>
-            </div><div class="col">
-              <span class="tag is-circle">x</span>
-            </div><div class="col">
-              <span class="tag is-circle">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch5'}">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch6'}">x</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch7'}">x</span>
             </div>
           </div>
           
@@ -146,7 +156,7 @@
     </div>
 
     <div v-for="channel in channels" :key="channel.id">
-      <canvas v-show="channel.id === activeChannelId" :ref="channel.id"></canvas>
+      <canvas v-show="channel.id === activeChannelId && t > mountTime" :ref="channel.id"></canvas>
     </div>
 
   </div>
@@ -156,12 +166,16 @@
     CHARTS = {}
 
     createApp({
+      watch: {},
       data() {
         return {
+          prevEvent: null,
           activeChannelId: null,
           gravacaoDeDados: false,
           tempoTotal: null,
           modoAuto: true,
+          mountTime: Infinity,
+          t: 0,
           // leituraDoCanal: null,
           // temperaturaDaAgua: null,
           // temperaturaAmbiete: null,
@@ -230,10 +244,13 @@
         }
       },
       mounted() {
+        this.mountTime = Date.now(),
+        console.log("criando graficos...")
         this.channels.forEach(channel => {
           this.creatChart(channel)
-          
         })
+        console.log("ok")
+        console.log("assinando eventos...")
         fetch('/api/events')
         .then(res => res.json())
         .then(eventObjArray => {
@@ -242,18 +259,20 @@
           // aguarda eventos
           const evtSource = new EventSource("/api/stream");
           evtSource.onerror = (e) => {
-            // console.log(e)
+            console.log(e)
           }
           evtSource.onmessage = (e) => {
             let eventObj = JSON.parse(e.data)
             this.handleEvent(eventObj)
           };
         })
+        console.log("ok")
+        console.log(this)
       },
       methods: {
         creatChart (channel) {
           const ctx = this.$refs[channel.id]
-          console.log(ctx)
+          //console.log(ctx)
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
             responsive: true,
@@ -292,7 +311,7 @@
                   },
                 },
                 y: {
-                  beginAtZero: true,
+                  beginAtZero: false,
                   title: {
                     display: true,
                     text: 'value'
@@ -303,8 +322,26 @@
           });
         },
         handleEvent (eventObj) {
-          Object.assign(this, eventObj)
-          console.log(eventObj, this)
+          if (eventObj.activeChannelId) {
+            CHARTS[eventObj.activeChannelId].data.datasets[0].data.push([null, null])
+          }
+          if (eventObj.read !== undefined) {
+            if (CHARTS[this.activeChannelId]) {
+              let data = CHARTS[this.activeChannelId].data.datasets[0].data
+              let i = data.length-1
+              data[i][0] ||= eventObj.t
+              data[i][1] ||= eventObj.read
+              data[i][1] = data[i][1]*0.4 + eventObj.read*0.6
+              
+              if (this.t > this.mountTime) {
+                CHARTS[this.activeChannelId].update('none')
+              }
+            }
+          } else {
+            Object.assign(this, eventObj)
+          }
+          this.prevEvent = eventObj
+
 
         }
       },
