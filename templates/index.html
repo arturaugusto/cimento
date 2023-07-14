@@ -31,28 +31,101 @@
       width: 200px;text-align: end;
     }
 
+    .card {
+      border-radius: 0px;
+      background: var(--bg-color);
+      -webkit-box-shadow: 0 0px 0px 1px var(--color-grey);
+      box-shadow: 0 0px 0px 1px var(--color-grey);
+    }
+
+    .button, button {
+      border-radius: 0px !important;
+      padding: 1rem 1rem !important;
+    }
+
+    .btn-close {
+      position: absolute;
+      top: 0;
+      right: 0;
+      border: none;
+      font-size: 20px;
+      padding: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #4AAE9B;
+      background: transparent;
+    }
+
+
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="search"],
+    textarea,
+    select {
+      border-radius: 0px !important;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555; /* Add border color */
+    }
+
+
+
+    /* For Webkit browsers (Chrome, Safari) */
+    ::-webkit-scrollbar {
+      width: 12px; /* Adjust width as needed */
+      background-color: #333; /* Background color of the scrollbar track */
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #666; /* Color of the scrollbar thumb */
+      border-radius: 0px; /* Rounded corners for the scrollbar thumb */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #888; /* Color of the scrollbar thumb on hover */
+    }
+
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal {
+      height: 80vh;
+      width: 90vw;
+      background: #232222;
+      overflow-x: auto;
+      /*display: flex;*/
+      flex-direction: row;
+    }
+
+    .modal-body {
+      position: relative;
+      padding: 20px 10px;
+    }
 
   </style>
 </head>
 <body>
 
-  <nav class="nav">
-    <div class="nav-left">
-      <a class="brand" href="#">Brand</a>
-      <a class="button outline">Button</a>
-      <div class="tabs">
-        <a>Link 1</a>
-        <a class="active">Link 2</a>
-      </div>
-    </div>
-    <!-- <div class="nav-right">
-    </div> -->
-  </nav>
 
   <script type="text/javascript" src="{{ url_for('static', filename='vue.global.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='chart.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='luxon.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='chartjs-adapter-luxon.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='regression.min.js') }}"></script>
 
   <style>
     body.dark {
@@ -63,6 +136,7 @@
       --color-darkGrey: #777;
     }
   </style>
+  
   <script>
     if (window.matchMedia &&
         window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -72,6 +146,75 @@
   </script>
 
   <div id="app">
+
+    <nav class="nav">
+      <div class="nav-left">
+        <a class="brand" href="#">MEDUSA</a>
+        <a class="button primary _outline" @click="mostrarModalCalibracao = true">Ajuste</a>
+        <!-- <div class="tabs">
+          <a>Link 1</a>
+          <a class="active">Link 2</a>
+        </div> -->
+      </div>
+      <!-- <div class="nav-right">
+      </div> -->
+    </nav>
+
+
+    <!-- modal start -->
+    <div class="modal-backdrop" class="card" v-if="mostrarModalCalibracao">
+      <div class="modal">
+        <header class="modal-header">
+          <button
+            type="button"
+            class="button btn-close error"
+            @click="mostrarModalCalibracao = false"
+          >&times; Fechar</button>
+        </header>
+
+        <section class="modal-body">
+          <div>
+            <span v-for="ch in channels" :key="ch.id" >
+              <div class="bg-primary text-center" style="width: 50px;">[[ch.id]]</div>
+              <span class="row">
+                <span v-for="(xy, xy_i) in ch.calData.points" :key="xy_i" class="col-3 is-vertical-align">
+
+                  <span>
+                    x: <a @click="xy[0] = ch.calData.$leitura" style="cursor: pointer;">[[ ch.calData.$leitura ]]</a>
+                    <input step="0.001" type="number" class="is-borderless" v-model="xy[0]" @change="fitData(ch)">
+                  </span>
+                  
+                  <span>
+                    y: <input step="0.001" type="number" class="is-borderless" v-model="xy[1]" @change="fitData(ch)">
+                  </span>
+                  
+                  <a class="" style="cursor: pointer;padding-left: 4px;color: red;font-size: 24px" @click="ch.calData.points.splice(xy_i, 1)&&fitData(ch)">&times;</a>
+                </span>
+                
+                <span class="col-2" style="padding-top: 22px">
+                  <a class="button success" @click="ch.calData.points.push([0, 0])">&plus; novo ponto</a>
+                </span>
+              </span>
+              <div class="row">
+                <pre>r2: [[ ch.calData.r2 ]], equation: [[ ch.calData.string ]]</pre>
+              </div>
+              testar:
+              <div>
+                x: <input step="0.001" type="number" class="is-borderless" v-model="ch.calData.$testX" style="width: 300px;" @keydown="testaPonto(ch)" @change="testaPonto(ch)"> y: [[ ch.calData.$testY ]]
+              </div>
+              <hr>
+            </span>
+            
+          </div>
+         </section>
+
+      </div>
+    </div>
+    <!-- modal end -->
+
+
+
+
     <div class="row" style="margin-top: 20px;margin-left: 20px;margin-right: 20px;">
       <div class="col-5 card">
         
@@ -108,46 +251,52 @@
         
       </div>
       <div class="col">
-        <div class="card" style="background: #1f53b1;">
-          <header>
+        <div class="card" style="background: #1f53b1;padding: 0px;">
+          <!-- <header>
             <h4 class="text-center">Temperatura ambiente</h4>
-          </header>
-          
-          <div class="row text-center">
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}">x</span>
-            </div>
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch1'}">x</span>
-            </div>
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch2'}">x</span>
-            </div>
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch3'}">x</span>
-            </div>
-          </div>
-          <div class="row text-center">
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch8'}">x</span>
-            </div>
-            <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch9'}">x</span>
+          </header> -->
+
+          <div class="row text-center" style="margin-left: 0px;margin-right: 0px;">
+            <div class="col" :class="{'bg-success': activeChannelId === 'ch8'}">
+              <span class="text-center">Temperatura ambiente</span>
             </div>
           </div>
           
           <div class="row text-center">
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch4'}">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}">ch0</span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch5'}">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch1'}">ch1</span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch6'}">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch2'}">ch2</span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch7'}">x</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch3'}">ch3</span>
+            </div>
+          </div>
+          <div class="row text-center">
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch8'}">ch8</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch9'}">ch9</span>
+            </div>
+          </div>
+          
+          <div class="row text-center">
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch4'}">ch4</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch5'}">ch5</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch6'}">ch6</span>
+            </div>
+            <div class="col">
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch7'}">ch7</span>
             </div>
           </div>
           
@@ -169,7 +318,7 @@
       watch: {},
       data() {
         return {
-          prevEvent: null,
+          mostrarModalCalibracao: true,
           activeChannelId: null,
           gravacaoDeDados: false,
           tempoTotal: null,
@@ -179,66 +328,66 @@
           // leituraDoCanal: null,
           // temperaturaDaAgua: null,
           // temperaturaAmbiete: null,
-          channels: [
+          channels: JSON.parse(window.localStorage.getItem('channels')) || [
             {
               id: "ch0",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch1",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch2",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch3",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch4",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch5",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch6",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch7",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch8",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch9",
               type: "lvdt",
               chart: null,
-              eq: '',
+              calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
           ],
         }
@@ -266,10 +415,33 @@
             this.handleEvent(eventObj)
           };
         })
+
+        this.channels.forEach(ch => {
+          this.fitData(ch)
+        })
+        
         console.log("ok")
         console.log(this)
       },
       methods: {
+        testaPonto (ch) {
+          if (ch.calData.$predict) {
+            ch.calData.$testY = ch.calData.$predict(ch.calData.$testX)[1]
+          }
+        },
+        lerCanal (e, ch) {
+          console.log(ch)
+        },
+        fitData (ch) {
+          let calData = ch.calData
+          let r = regression.polynomial(calData.points, { order: calData.points.length-1, precision: 17 })
+          // console.log(r)
+          calData.r2 = r.r2
+          calData.string = r.string
+          calData.$predict = r.predict
+          window.localStorage.setItem('channels', JSON.stringify(this.channels, (k, v) => k.startsWith('$') ? undefined : v))
+          this.testaPonto(ch)
+        },
         creatChart (channel) {
           const ctx = this.$refs[channel.id]
           //console.log(ctx)
@@ -327,11 +499,20 @@
           }
           if (eventObj.read !== undefined) {
             if (CHARTS[this.activeChannelId]) {
+              let ch = this.channels.filter(ch => ch.id === this.activeChannelId)[0]
+
               let data = CHARTS[this.activeChannelId].data.datasets[0].data
               let i = data.length-1
               data[i][0] ||= eventObj.t
               data[i][1] ||= eventObj.read
               data[i][1] = data[i][1]*0.4 + eventObj.read*0.6
+              
+              // grava ultima leitura estabilizada para uso em dados de calibração
+              // ch.calData.$leitura = data[i-1] !== undefined ? Math.round(data[i-1][1]*1000000)/1000000 : undefined
+              // ch.calData.$leitura = data[i] !== undefined ? Math.round(data[i][1]*1000000)/1000000 : undefined
+
+              // faz previsão da leitura e grava nos dados do gráfico
+              data[i][1] = ch.calData.$predict && !isNaN(ch.calData.r2) ? ch.calData.$predict(data[i][1])[1] : data[i][1]
               
               if (this.t > this.mountTime) {
                 CHARTS[this.activeChannelId].update('none')
@@ -340,9 +521,6 @@
           } else {
             Object.assign(this, eventObj)
           }
-          this.prevEvent = eventObj
-
-
         }
       },
       delimiters: ["[[", "]]"],
