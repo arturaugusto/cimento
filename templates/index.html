@@ -217,7 +217,7 @@
 
                   </div>
                   <div class="col-8">
-                    <div>r2: [[ ch.calData.r2.toFixed(4) ]]</div>
+                    <div>r2: [[ ch.calData.r2 ? ch.calData.r2.toFixed(4) : 0 ]]</div>
                     equação:
                     <!-- <pre>[[ ch.calData.string ]]</pre> -->
                     <input v-model="ch.calData.function" type="text" @change="createPredict(ch)" @keyup="createPredict(ch)">
@@ -421,7 +421,6 @@
         }
       },
       mounted() {
-        this.mountTime = Date.now(),
         console.log("criando graficos...")
         this.channels.forEach(channel => {
           this.creatChart(channel)
@@ -449,11 +448,9 @@
         })
         
         window.setTimeout(() => {
-          console.log("ok")
-          this.mountTime = 0
-          this.handleEvent({render: true})
-        }, 4000)
-
+          this.mountTime = Date.now()
+        }, 2000)
+        
         console.log(this)
 
       },
@@ -493,6 +490,8 @@
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
             responsive: false,
+            width: 200,
+            heigth: 200,
             data: {
               datasets: [{
                 label: '# of Votes',
@@ -502,6 +501,7 @@
               }]
             },
             options: {
+              spanGaps: true,
               plugins: {
                 legend: {
                   display: false
@@ -542,9 +542,15 @@
         },
         handleEvent (eventObj) {
           if (eventObj.render) {
-            CHARTS[this.activeChannelId].update('none')
+            //CHARTS[this.activeChannelId].update('none')
           }
           if (eventObj.activeChannelId) {
+            // modoAuto = 1, então estamos no modo manual (sim, é invertido)
+            // e habilita modo free run
+            if (this.modoAuto && this.t > this.mountTime) {
+              CHARTS[this.activeChannelId].update('none')
+            }
+
             CHARTS[eventObj.activeChannelId].data.datasets[0].data.push([null, null])
             CHARTS[eventObj.activeChannelId].rawData.push([null, null])
           }
@@ -555,26 +561,19 @@
               let data = CHARTS[this.activeChannelId].data.datasets[0].data
               let rawData = CHARTS[this.activeChannelId].rawData
 
-              // modoAuto = 0, então estamos no modo manual (sim, é invertido)
-              // e habilita modo free run
-              if (this.modoAuto) {
-                data.push([null, null])
-                rawData.push([null, null])
-              }
-
               let i = rawData.length-1
               rawData[i][0] ||= eventObj.t
               rawData[i][1] ||= eventObj.read
               rawData[i][1] = rawData[i][1]*0.4 + eventObj.read*0.6
-
               
               // grava ultima leitura estabilizada para uso em dados de calibração
               ch.calData.$leitura = rawData[i] !== undefined ? Math.round(rawData[i][1]*1000000)/1000000 : undefined
 
+              data[i][0] = rawData[i][0]
               // faz previsão da leitura e grava nos dados do gráfico
-              data[i][1] = ch.calData.$predict && (ch.calData.r2 !== 'NaN') ? ch.calData.$predict(rawData[i][1])[1] : rawData[i][1]
+              data[i][1] = ch.calData.$predict && !isNaN(ch.calData.r2) ? ch.calData.$predict(rawData[i][1]) : rawData[i][1]
               
-              if (this.t > this.mountTime) {
+              if (!this.modoAuto && this.t > this.mountTime) {
                 CHARTS[this.activeChannelId].update('none')
               }
             }
