@@ -43,6 +43,10 @@
       padding: 1rem 1rem !important;
     }
 
+    button, a {
+      cursor: pointer !important;
+    }
+
     .btn-close {
       position: absolute;
       top: 0;
@@ -116,6 +120,11 @@
       padding: 20px 10px;
     }
 
+    .nav img {
+      max-height: 6rem;
+      padding-top: 6px;
+    }
+
   </style>
 </head>
 <body>
@@ -143,13 +152,16 @@
       document.body.classList.add('dark');
     }
     document.body.classList.add('dark');
+
+    let pow = Math.pow
   </script>
 
   <div id="app">
 
     <nav class="nav">
       <div class="nav-left">
-        <a class="brand" href="#">MEDUSA</a>
+        <a class="brand" href="#"><img src="{{ url_for('static', filename='logo.svg') }}"></a>
+        <!-- <a class="brand" href="#">MEDUSA</a> -->
         <a class="button primary _outline" @click="mostrarModalCalibracao = true">Ajuste</a>
         <!-- <div class="tabs">
           <a>Link 1</a>
@@ -173,36 +185,50 @@
         </header>
 
         <section class="modal-body">
-          <div>
-            <span v-for="ch in channels" :key="ch.id" >
-              <div class="bg-primary text-center" style="width: 50px;">[[ch.id]]</div>
-              <span class="row">
-                <span v-for="(xy, xy_i) in ch.calData.points" :key="xy_i" class="col-3 is-vertical-align">
+          <nav class="tabs">
+            <a @click="calChannelId = ch.id" :class="{'active text-light': ch.id === calChannelId}" v-for="ch in channels" :key="ch.id">[[ ch.id ]]</a>
+          </nav>
 
-                  <span>
-                    x: <a @click="xy[0] = ch.calData.$leitura" style="cursor: pointer;">[[ ch.calData.$leitura ]]</a>
-                    <input step="0.001" type="number" class="is-borderless" v-model="xy[0]" @change="fitData(ch)">
-                  </span>
-                  
-                  <span>
-                    y: <input step="0.001" type="number" class="is-borderless" v-model="xy[1]" @change="fitData(ch)">
-                  </span>
-                  
-                  <a class="" style="cursor: pointer;padding-left: 4px;color: red;font-size: 24px" @click="ch.calData.points.splice(xy_i, 1)&&fitData(ch)">&times;</a>
+          <div>
+            <span v-for="ch in channels" :key="ch.id">
+              <div v-if="calChannelId === ch.id">              
+                <div class="bg-primary text-center" style="width: 50px;">[[ch.id]]</div>
+
+                <span class="row">
+                  <div class="col-4">
+                    <table>
+                      <tr v-for="(xy, xy_i) in ch.calData.points" :key="xy_i">
+                        <td>
+                          <a @click="xy[0] = ch.calData.$leitura" style="cursor: pointer;">[[ ch.calData.$leitura ]]</a>
+                        </td>
+                        <td>
+                          <input step="0.001" type="number" class="is-borderless" v-model="xy[0]" @change="fitData(ch)">
+                        </td>
+                        <td>
+                          <input step="0.001" type="number" class="is-borderless" v-model="xy[1]" @change="fitData(ch)">
+                        </td>
+                        <td>
+                          <a class="" style="cursor: pointer;padding-left: 4px;color: red;font-size: 24px" @click="ch.calData.points.splice(xy_i, 1)&&fitData(ch)">&times;</a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <a class="button success" @click="ch.calData.points.push([0, 0])">&plus; novo ponto</a>
+
+                  </div>
+                  <div class="col-8">
+                    <div>r2: [[ ch.calData.r2.toFixed(4) ]]</div>
+                    equação:
+                    <!-- <pre>[[ ch.calData.string ]]</pre> -->
+                    <input v-model="ch.calData.function" type="text" @change="createPredict(ch)" @keyup="createPredict(ch)">
+                    <div> testar x: <input step="0.001" type="number" class="is-borderless" v-model="ch.calData.$testX" style="width: 300px;" @keyup="testaPonto(ch)" @change="testaPonto(ch)"> y: [[ ch.calData.$testY ]]
+                    </div>
+
+                  </div>
                 </span>
-                
-                <span class="col-2" style="padding-top: 22px">
-                  <a class="button success" @click="ch.calData.points.push([0, 0])">&plus; novo ponto</a>
-                </span>
-              </span>
-              <div class="row">
-                <pre>r2: [[ ch.calData.r2 ]], equation: [[ ch.calData.string ]]</pre>
+
+
               </div>
-              testar:
-              <div>
-                x: <input step="0.001" type="number" class="is-borderless" v-model="ch.calData.$testX" style="width: 300px;" @keyup="testaPonto(ch)" @change="testaPonto(ch)"> y: [[ ch.calData.$testY ]]
-              </div>
-              <hr>
             </span>
             
           </div>
@@ -321,6 +347,7 @@
         return {
           mostrarModalCalibracao: false,
           activeChannelId: null,
+          calChannelId: 'ch0',
           gravacaoDeDados: false,
           tempoTotal: null,
           modoAuto: true,
@@ -418,16 +445,22 @@
         })
 
         this.channels.forEach(ch => {
-          this.fitData(ch)
+          this.createPredict(ch)
         })
         
-        console.log("ok")
+        window.setTimeout(() => {
+          console.log("ok")
+          this.mountTime = 0
+          this.handleEvent({render: true})
+        }, 4000)
+
         console.log(this)
+
       },
       methods: {
         testaPonto (ch) {
           if (ch.calData.$predict) {
-            ch.calData.$testY = ch.calData.$predict(ch.calData.$testX)[1]
+            ch.calData.$testY = ch.calData.$predict(ch.calData.$testX)
           }
         },
         lerCanal (e, ch) {
@@ -439,8 +472,19 @@
           // console.log(r)
           calData.r2 = r.r2
           calData.string = r.string
-          calData.$predict = r.predict
+          // calData.$predict = r.predict
+          calData.function = r.equation
+            .slice(0,-1)
+            .map((x, i) => `${x}*pow(x, ${r.equation.length-(i+1)})`)
+            .join(' + ') + ` + ${r.equation[r.equation.length-1]}`
+
+          this.createPredict(ch, calData)
+        },
+        createPredict (ch) {
+          let calData = ch.calData
+          calData.$predict = new Function('x', `return ${calData.function}`)
           window.localStorage.setItem('channels', JSON.stringify(this.channels, (k, v) => k.startsWith('$') ? undefined : v))
+          console.log('lalala')
           this.testaPonto(ch)
         },
         creatChart (channel) {
@@ -493,27 +537,42 @@
               }
             }
           });
+
+          CHARTS[channel.id].rawData = []
         },
         handleEvent (eventObj) {
+          if (eventObj.render) {
+            CHARTS[this.activeChannelId].update('none')
+          }
           if (eventObj.activeChannelId) {
             CHARTS[eventObj.activeChannelId].data.datasets[0].data.push([null, null])
+            CHARTS[eventObj.activeChannelId].rawData.push([null, null])
           }
           if (eventObj.read !== undefined) {
             if (CHARTS[this.activeChannelId]) {
               let ch = this.channels.filter(ch => ch.id === this.activeChannelId)[0]
 
               let data = CHARTS[this.activeChannelId].data.datasets[0].data
-              let i = data.length-1
-              data[i][0] ||= eventObj.t
-              data[i][1] ||= eventObj.read
-              data[i][1] = data[i][1]*0.4 + eventObj.read*0.6
+              let rawData = CHARTS[this.activeChannelId].rawData
+
+              // modoAuto = 0, então estamos no modo manual (sim, é invertido)
+              // e habilita modo free run
+              if (this.modoAuto) {
+                data.push([null, null])
+                rawData.push([null, null])
+              }
+
+              let i = rawData.length-1
+              rawData[i][0] ||= eventObj.t
+              rawData[i][1] ||= eventObj.read
+              rawData[i][1] = rawData[i][1]*0.4 + eventObj.read*0.6
+
               
               // grava ultima leitura estabilizada para uso em dados de calibração
-              // ch.calData.$leitura = data[i-1] !== undefined ? Math.round(data[i-1][1]*1000000)/1000000 : undefined
-              ch.calData.$leitura = data[i] !== undefined ? Math.round(data[i][1]*1000000)/1000000 : undefined
+              ch.calData.$leitura = rawData[i] !== undefined ? Math.round(rawData[i][1]*1000000)/1000000 : undefined
 
               // faz previsão da leitura e grava nos dados do gráfico
-              data[i][1] = ch.calData.$predict && !isNaN(ch.calData.r2) ? ch.calData.$predict(data[i][1])[1] : data[i][1]
+              data[i][1] = ch.calData.$predict && (ch.calData.r2 !== 'NaN') ? ch.calData.$predict(rawData[i][1])[1] : rawData[i][1]
               
               if (this.t > this.mountTime) {
                 CHARTS[this.activeChannelId].update('none')
