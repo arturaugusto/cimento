@@ -18,7 +18,9 @@
       border-radius: 1000px;
       height: 6vw;
       width: 6vw;
-      padding-top: 2vw;
+      padding-top: 1.5vw;
+      font-size: 20px;
+      background: #14416d;
     }
 
 
@@ -28,7 +30,7 @@
     }
 
     .narrow-col {
-      width: 200px;text-align: end;
+      width: 180px;text-align: end;
     }
 
     .card {
@@ -73,7 +75,11 @@
       border-radius: 0px !important;
       background-color: #333;
       color: #fff;
-      border: 1px solid #555; /* Add border color */
+      border: 1px solid #4d4d4d !important;
+    }
+
+    .card {
+      box-shadow: 0 0px 0px 1px #585858 !important;
     }
 
 
@@ -121,13 +127,17 @@
     }
 
     .nav img {
-      max-height: 6rem;
+      max-height: 8rem;
       padding-top: 6px;
+    }
+
+    .tag {
+      text-transform: inherit;
     }
 
   </style>
 </head>
-<body>
+<body style="background-color: #1b1b1b;">
 
 
   <script type="text/javascript" src="{{ url_for('static', filename='vue.global.js') }}"></script>
@@ -157,24 +167,25 @@
   </script>
 
   <div id="app">
-
     <nav class="nav">
       <div class="nav-left">
-        <a class="brand" href="#"><img src="{{ url_for('static', filename='logo.svg') }}"></a>
+        <a class="brand" href="#" style="pointer-events: none;"><img src="{{ url_for('static', filename='logo.svg') }}"></a>
         <!-- <a class="brand" href="#">MEDUSA</a> -->
+
+        <span class="button text-light" :class="{'bg-error': !gravacaoDeDados, 'bg-success': gravacaoDeDados}" style="pointer-events: none;">Gravação: [[ gravacaoDeDados ? "LIGADA" : "DESLIGADA"]]</span>
+
+        <span class="button text-light" :class="{'bg-error': modoAuto, 'bg-success': !modoAuto}" style="pointer-events: none;">Modo: [[ !modoAuto ? "AUTO" : "MANUAL" ]]</span>
         <a class="button primary _outline" @click="mostrarModalCalibracao = true">Ajuste</a>
-        <!-- <div class="tabs">
-          <a>Link 1</a>
-          <a class="active">Link 2</a>
-        </div> -->
+
       </div>
-      <!-- <div class="nav-right">
-      </div> -->
+      <div class="nav-right">
+        <img src="{{ url_for('static', filename='logoipt_bcocor2.png') }}" style="margin-right: 20px;">
+      </div>
     </nav>
 
 
     <!-- modal start -->
-    <div class="modal-backdrop" class="card" v-if="mostrarModalCalibracao">
+    <div class="modal-backdrop" class="card" v-show="mostrarModalCalibracao">
       <div class="modal">
         <header class="modal-header">
           <button
@@ -191,12 +202,17 @@
 
           <div>
             <span v-for="ch in channels" :key="ch.id">
-              <div v-if="calChannelId === ch.id">              
+              <div v-show="calChannelId === ch.id">              
                 <div class="bg-primary text-center" style="width: 50px;">[[ch.id]]</div>
 
                 <span class="row">
                   <div class="col-4">
                     <table>
+                      <tr>
+                        <th></th>
+                        <th>x</th>
+                        <th>y</th>
+                      </tr>
                       <tr v-for="(xy, xy_i) in ch.calData.points" :key="xy_i">
                         <td>
                           <a @click="xy[0] = ch.calData.$leitura" style="cursor: pointer;">[[ ch.calData.$leitura ]]</a>
@@ -217,11 +233,23 @@
 
                   </div>
                   <div class="col-8">
-                    <div>r2: [[ ch.calData.r2 ? ch.calData.r2.toFixed(4) : 0 ]]</div>
+                    ordem: <input v-model="ch.calData.order" type="number" step="1" min="1" @change="fitData(ch)" @keyup="fitData(ch)">
+
                     equação:
                     <!-- <pre>[[ ch.calData.string ]]</pre> -->
                     <input v-model="ch.calData.function" type="text" @change="createPredict(ch)" @keyup="createPredict(ch)">
+                    <div>R²: [[ ch.calData.r2 ? ch.calData.r2.toFixed(4) : 0 ]]</div>
+                    
                     <div> testar x: <input step="0.001" type="number" class="is-borderless" v-model="ch.calData.$testX" style="width: 300px;" @keyup="testaPonto(ch)" @change="testaPonto(ch)"> y: [[ ch.calData.$testY ]]
+                    </div>
+
+
+                    <label> unidade:</label>
+                    <input v-model="ch.unidade" @change="createPredict(ch)" type="text" style="width: 150px;">
+                    
+
+                    <div style="height: 40vh;">
+                      <canvas :ref="ch.id+'Cal'"></canvas>
                     </div>
 
                   </div>
@@ -231,6 +259,7 @@
               </div>
             </span>
             
+            
           </div>
          </section>
 
@@ -239,45 +268,9 @@
     <!-- modal end -->
 
 
-
-
     <div class="row" style="margin-top: 20px;margin-left: 20px;margin-right: 20px;">
-      <div class="col-5 card">
-        
-        <div class="row">
-          <div class="col is-narrow narrow-col">Gravação de dados</div>
-          <div class="col"><span class="tag" :class="{'bg-error': !gravacaoDeDados, 'bg-success': gravacaoDeDados}">[[ gravacaoDeDados ? "LIGADA" : "DESLIGADA"]]</span></div>
-        </div>
-
-        <div class="row">
-          <div class="col is-narrow narrow-col">Tempo total</div>
-          <div class="col"><span class="tag bg-error">0h0min</span></div>
-        </div>
-
-        <div class="row">
-          <div class="col is-narrow narrow-col">Modo</div>
-          <div class="col"><span class="tag" :class="{'bg-error': modoAuto, 'bg-success': !modoAuto}">[[ !modoAuto ? "AUTO" : "MANUAL" ]]</span></div>
-        </div>
-
-        <div class="row">
-          <div class="col is-narrow narrow-col">Leitura do canal</div>
-          <div class="col"><span class="tag bg-dark">10ml</span></div>
-        </div>
-
-        <div class="row">
-          <div class="col is-narrow narrow-col">Temperatura da água</div>
-          <div class="col"><span class="tag bg-dark">19 oC</span></div>
-        </div>
-
-        <div class="row">
-          <div class="col is-narrow narrow-col">Temperatura ambiente</div>
-          <div class="col"><span class="tag bg-dark">23 oC</span></div>
-        </div>
-
-        
-      </div>
-      <div class="col">
-        <div class="card" style="background: #1f53b1;padding: 0px;">
+      <div class="col is-center">
+        <div class="card" style="background: rgb(20 51 109);padding: 0px;width: 80vw;">
           <!-- <header>
             <h4 class="text-center">Temperatura ambiente</h4>
           </header> -->
@@ -290,40 +283,58 @@
           
           <div class="row text-center">
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch4'}">ch4</span>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch4'}">ch4
+                <div>[[ channels[4].$leitura ]] [[ channels[4].unidade ]]</div>
+              </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch5'}">ch5</span>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch5'}">ch5
+                <div>[[ channels[5].$leitura ]] [[ channels[5].unidade ]]</div>
+              </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch6'}">ch6</span>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch6'}">ch6
+                <div>[[ channels[6].$leitura ]] [[ channels[6].unidade ]]</div>
+              </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch7'}">ch7</span>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch7'}">ch7
+                <div>[[ channels[7].$leitura ]] [[ channels[7].unidade ]]</div>
+              </span>
             </div>
           </div>
           <div class="row text-center">
 
             <div class="col-2">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}">Temp. água</span>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}"><small>T. água</small>
+                <div>[[ channels[0].$leitura ]] [[ channels[0].unidade ]]</div>
+              </span>
             </div>
 
             <div class="col-3">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch8'}">ch8</span>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch8'}">ch8
+                <div>[[ channels[8].$leitura ]] [[ channels[8].unidade ]]</div>
+              </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch9'}">ch9</span>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch9'}">ch9
+                <div>[[ channels[9].$leitura ]] [[ channels[9].unidade ]]</div>
+              </span>
             </div>
           </div>
           
           <div class="row text-center">
             <div class="col-3">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch3'}">ch3</span>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch3'}">ch3
+                <div>[[ channels[3].$leitura ]] [[ channels[3].unidade ]]</div>
+              </span>
             </div>
             <div class="col-3"></div>
             <div class="col-3"></div>
             <div class="col-3">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch2'}">ch2</span>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch2'}">ch2
+                <div>[[ channels[2].$leitura ]] [[ channels[2].unidade ]]</div>
+              </span>
             </div>
           </div>
           
@@ -423,8 +434,10 @@
       mounted() {
         console.log("criando graficos...")
         this.channels.forEach(channel => {
-          this.creatChart(channel)
+          this.createChart(channel)
+          this.createCalChart(channel)
         })
+
         console.log("ok")
         console.log("assinando eventos...")
         fetch('/api/events')
@@ -450,8 +463,6 @@
         window.setTimeout(() => {
           this.mountTime = Date.now()
         }, 2000)
-        
-        console.log(this)
 
       },
       methods: {
@@ -465,7 +476,8 @@
         },
         fitData (ch) {
           let calData = ch.calData
-          let r = regression.polynomial(calData.points, { order: calData.points.length-1, precision: 17 })
+          let r = regression.polynomial(calData.points, { order: calData.order, precision: 17 })
+          console.log(calData.order)
           // console.log(r)
           calData.r2 = r.r2
           calData.string = r.string
@@ -481,17 +493,71 @@
           let calData = ch.calData
           calData.$predict = new Function('x', `return ${calData.function}`)
           window.localStorage.setItem('channels', JSON.stringify(this.channels, (k, v) => k.startsWith('$') ? undefined : v))
-          console.log('lalala')
+
+          CHARTS[ch.id+'Cal'].data.datasets[0].data = calData.points.map(x => [x[0], [x[1]]])
+          CHARTS[ch.id+'Cal'].data.datasets[1].data = calData.points.map(x => [x[0], calData.$predict(x[0])])
+
+          CHARTS[ch.id+'Cal'].options.scales.y.title.text = ch.unidade
+
+          if (Date.now() > this.mountTime) {
+            CHARTS[ch.id+'Cal'].update('none')
+          }
           this.testaPonto(ch)
         },
-        creatChart (channel) {
+        createCalChart (channel) {
+          const ctx = this.$refs[channel.id+'Cal']
+          CHARTS[channel.id+'Cal'] = new Chart(ctx, {
+            type: 'scatter',
+            responsive: false,
+            data: {
+              datasets: [{
+                label: 'Pontos informados',
+                data: null,
+                borderWidth: 1,
+                type: 'line'
+              },{
+                label: 'Resultado do ajuste',
+                data: null,
+                borderWidth: 1,
+                type: 'line'
+              }]
+            },
+            options: {
+              spanGaps: true,
+              plugins: {
+                legend: {
+                  display: true
+                },
+                title: {
+                  display: true,
+                  text: 'Ajuste da curva'
+                }
+              },
+              scales: {
+                x: {
+                  beginAtZero: false,
+                  title: {
+                    display: true,
+                    text: 'Volts'
+                  }
+                },
+                y: {
+                  beginAtZero: false,
+                  title: {
+                    display: true,
+                    text: ''
+                  }
+                }
+              }
+            }
+          })
+        },
+        createChart (channel) {
           const ctx = this.$refs[channel.id]
           //console.log(ctx)
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
             responsive: false,
-            width: 200,
-            heigth: 200,
             data: {
               datasets: [{
                 label: '# of Votes',
@@ -572,6 +638,7 @@
               data[i][0] = rawData[i][0]
               // faz previsão da leitura e grava nos dados do gráfico
               data[i][1] = ch.calData.$predict && !isNaN(ch.calData.r2) ? ch.calData.$predict(rawData[i][1]) : rawData[i][1]
+              ch.$leitura = isNaN(data[i][1]) ? '' : data[i][1].toFixed(3)
               
               if (!this.modoAuto && this.t > this.mountTime) {
                 CHARTS[this.activeChannelId].update('none')
