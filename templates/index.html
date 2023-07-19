@@ -273,9 +273,9 @@
     <!-- modal end -->
 
 
-    <div class="row" style="margin-top: 20px;margin-left: 20px;margin-right: 20px;">
+    <div class="row" style="margin-top: 10px;margin-left: 10px;margin-right: 10px;">
       <div class="col is-center">
-        <div class="card" style="background: rgb(20 51 109);padding: 0px;width: 80vw;">
+        <div class="card" style="background: rgb(20 51 109);padding: 0px;width: 70vw;height: 45vh;">
           <!-- <header>
             <h4 class="text-center">Temperatura ambiente</h4>
           </header> -->
@@ -347,8 +347,10 @@
       </div>
     </div>
 
-    <div v-for="channel in channels" :key="channel.id">
-      <canvas v-show="channel.id === activeChannelId && t > mountTime" :ref="channel.id"></canvas>
+    <div v-for="channel in channels" :key="channel.id" class="row">
+      <div class="col is-center" v-show="channel.id === activeChannelId && t > mountTime" style="height: 50vh;width: 80vw;">
+        <canvas :ref="channel.id"></canvas>
+      </div>
     </div>
 
   </div>
@@ -467,7 +469,7 @@
         
         window.setTimeout(() => {
           this.mountTime = Date.now()
-        }, 2000)
+        }, 5000)
 
       },
       methods: {

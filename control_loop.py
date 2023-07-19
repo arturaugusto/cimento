@@ -113,7 +113,6 @@ GPIO.add_event_callback(SAIDAS["EXECUTA_LEITURA"], executa_leitura)
 
 
 def main():
-  prev_output = []
   while True:
     time.sleep(1)
 
