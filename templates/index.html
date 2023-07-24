@@ -473,6 +473,13 @@
 
       },
       methods: {
+        gravaDados () {
+          let payload = this.channels.map(ch => {
+            let csv = ch.chart.datasets[0].data.reduce((a, c) => a+`${item[0]};${item[0]}\n`, 't;leitura\n')
+            return {ch: ch.id, csv: csv}
+          })
+          console.log(payload)
+        },
         testaPonto (ch) {
           if (ch.calData.$predict) {
             ch.calData.$testY = ch.calData.$predict(ch.calData.$testX)
@@ -570,7 +577,7 @@
             responsive: false,
             data: {
               datasets: [{
-                label: '# of Votes',
+                // label: '# of Votes',
                 // data: new Array(5).fill().map((_, i) => [Date.now()+i, Math.random()]),
                 data: [],
                 borderWidth: 1

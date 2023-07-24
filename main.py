@@ -3,7 +3,11 @@ import io
 import json
 import time
 import os
-import control_loop
+try:
+  import control_loop
+except Exception as e:
+  print(e)
+  pass
 
 
 

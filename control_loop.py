@@ -4,7 +4,8 @@ import RPi.GPIO as GPIO
 from pipyadc import ADS1256
 from pipyadc.ADS1256_definitions import *
 import waveshare_config
-
+import shutil
+from datetime import datetime
 
 # diferencial entre canal 1 e 0
 ADC_DIFF = POS_AIN1 | POS_AIN0 
@@ -60,6 +61,13 @@ GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
 def gravacao(pin):
   if GPIO.input(pin):
     print('grava')
+    now_str = str(datetime.utcnow()).replace('-','_').replace(' ', '').replace(':', '_').replace('.','_')
+    shutil.copy2("./data.txt", f"./data_{now_str}.txt")
+    with open("./data.txt", "w") as f:
+      # overwrite file content with a empty object
+      f.write(json.dumps({})+'\n')
+    append_to_data({"novoEnsaio": True})
+
   else:
     print('nao grava')
   append_to_data({"gravacaoDeDados": GPIO.input(pin)})
