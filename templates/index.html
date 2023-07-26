@@ -190,7 +190,7 @@
 
 
     <!-- modal start -->
-    <div class="modal-backdrop" class="card" v-show="mostrarModalCalibracao">
+    <div class="modal-backdrop" class="card" v-show="mostrarModalCalibracao" style="min-height: 300px !important;">
       <div class="modal">
         <header class="modal-header">
           <button
@@ -288,12 +288,17 @@
           
           <div class="row text-center">
             <div class="col">
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch3'}">ch3
+                <div>[[ channels[3].$leitura ]] [[ channels[3].unidade ]]</div>
+              </span>
+            </div>
+            <div class="col">
               <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch4'}">ch4
                 <div>[[ channels[4].$leitura ]] [[ channels[4].unidade ]]</div>
               </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch5'}">ch5
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch5'}">ch5
                 <div>[[ channels[5].$leitura ]] [[ channels[5].unidade ]]</div>
               </span>
             </div>
@@ -302,43 +307,38 @@
                 <div>[[ channels[6].$leitura ]] [[ channels[6].unidade ]]</div>
               </span>
             </div>
-            <div class="col">
-              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch7'}">ch7
-                <div>[[ channels[7].$leitura ]] [[ channels[7].unidade ]]</div>
-              </span>
-            </div>
           </div>
           <div class="row text-center">
 
             <div class="col-2">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}"><small>T. água</small>
+              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}"><small>T. água (ch1)</small>
                 <div>[[ channels[0].$leitura ]] [[ channels[0].unidade ]]</div>
               </span>
             </div>
 
             <div class="col-3">
-              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch8'}">ch8
-                <div>[[ channels[8].$leitura ]] [[ channels[8].unidade ]]</div>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch9'}">ch9
+                <div>[[ channels[9].$leitura ]] [[ channels[9].unidade ]]</div>
               </span>
             </div>
             <div class="col">
-              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch9'}">ch9
-                <div>[[ channels[9].$leitura ]] [[ channels[9].unidade ]]</div>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch8'}">ch8
+                <div>[[ channels[8].$leitura ]] [[ channels[8].unidade ]]</div>
               </span>
             </div>
           </div>
           
           <div class="row text-center">
             <div class="col-3">
-              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch3'}">ch3
-                <div>[[ channels[3].$leitura ]] [[ channels[3].unidade ]]</div>
+              <span class="tag is-circle" style="box-shadow: -2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch2'}">ch2
+                <div>[[ channels[2].$leitura ]] [[ channels[2].unidade ]]</div>
               </span>
             </div>
             <div class="col-3"></div>
             <div class="col-3"></div>
             <div class="col-3">
-              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch2'}">ch2
-                <div>[[ channels[2].$leitura ]] [[ channels[2].unidade ]]</div>
+              <span class="tag is-circle" style="box-shadow: 2px 0px 0px 1px #a7bdc7;" :class="{'bg-success': activeChannelId === 'ch7'}">ch7
+                <div>[[ channels[7].$leitura ]] [[ channels[7].unidade ]]</div>
               </span>
             </div>
           </div>
@@ -360,7 +360,25 @@
     CHARTS = {}
 
     createApp({
-      watch: {},
+      watch: {
+        gravacaoDeDados (val, prev) {
+          if (val && !prev) {
+            console.log('novo ensaio')
+            this.channels.forEach(ch => {
+              let data = CHARTS[ch.id].data.datasets[0].data
+              data.splice(0,data.length)
+              
+              let rawData = CHARTS[ch.id].rawData
+              rawData.splice(0, rawData.length)
+              
+              data.push([null, null])
+              rawData.push([null, null])
+              
+              CHARTS[ch.id].update('none')
+            })
+          }
+        }
+      },
       data() {
         return {
           mostrarModalCalibracao: false,
@@ -522,7 +540,7 @@
           const ctx = this.$refs[channel.id+'Cal']
           CHARTS[channel.id+'Cal'] = new Chart(ctx, {
             type: 'scatter',
-            responsive: false,
+            responsive: true,
             data: {
               datasets: [{
                 label: 'Pontos informados',
@@ -574,7 +592,7 @@
           //console.log(ctx)
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
-            responsive: false,
+            responsive: true,
             data: {
               datasets: [{
                 // label: '# of Votes',

@@ -61,12 +61,13 @@ GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
 def gravacao(pin):
   if GPIO.input(pin):
     print('grava')
+    time.sleep(0.1)
     now_str = str(datetime.utcnow()).replace('-','_').replace(' ', '').replace(':', '_').replace('.','_')
     shutil.copy2("./data.txt", f"./data_{now_str}.txt")
     with open("./data.txt", "w") as f:
       # overwrite file content with a empty object
       f.write(json.dumps({})+'\n')
-    append_to_data({"novoEnsaio": True})
+    #append_to_data({"novoEnsaio": True})
 
   else:
     print('nao grava')
