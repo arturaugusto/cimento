@@ -3,6 +3,7 @@ import io
 import json
 import time
 import os
+import subprocess
 try:
   import control_loop
 except Exception as e:
@@ -12,6 +13,13 @@ except Exception as e:
 
 
 app = Flask(__name__)
+
+@app.route('/api/gravar_pendrive', methods=['POST'])
+def gravar_pendrive():
+  res = subprocess.check_output(['ls', '/media/ipt'])
+  target_drive = res.decode('utf-8').split('\n')[0]
+  
+  return jsonify({"target_drive": target_drive})
 
 def event_stream():
   file_size_stored = os.stat('data.txt').st_size
@@ -52,4 +60,4 @@ def root():
   return render_template('/index.html')
 
 if __name__ == '__main__':
-  app.run('0.0.0.0', debug=False)
+  app.run('0.0.0.0', debug=True)

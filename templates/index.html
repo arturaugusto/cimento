@@ -6,6 +6,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='chota.css') }}">
 
   <style>
+    body {
+      overflow-x: hidden !important;
+      overflow-y: hidden !important;
+    }
+    
     body.dark {
       --bg-color: #000;
       --bg-secondary-color: #131316;
@@ -16,10 +21,10 @@
 
     .is-circle {
       border-radius: 1000px;
-      height: 6vw;
-      width: 6vw;
-      padding-top: 1.5vw;
-      font-size: 20px;
+      height: 5vw;
+      width: 5vw;
+      padding-top: 8px;
+      font-size: 16px;
       background: #b4b8be;
       color: #404040;
 
@@ -130,9 +135,14 @@
       position: relative;
       padding: 20px 10px;
     }
+    
+    .nav {
+      height: 10px !important;
+    }
 
     .nav img {
-      max-height: 8rem;
+      max-height: 6rem;
+      min-height: 4rem;
       padding-top: 6px;
     }
 
@@ -219,7 +229,7 @@
                         <th>y</th>
                       </tr>
                       <tr v-for="(xy, xy_i) in ch.calData.points" :key="xy_i">
-                        <td>
+                        <td style="min-width: 100px;">
                           <a @click="xy[0] = ch.calData.$leitura" style="cursor: pointer;">[[ ch.calData.$leitura ]]</a>
                         </td>
                         <td>
@@ -252,6 +262,9 @@
                     <label> unidade:</label>
                     <input v-model="ch.unidade" @change="createPredict(ch)" type="text" style="width: 150px;">
                     
+                    <label>casas:</label>
+                    <input v-model="ch.places" @change="createPredict(ch)" type="number" min=1 style="width: 150px;">
+                    
 
                     <div style="height: 40vh;">
                       <canvas :ref="ch.id+'Cal'"></canvas>
@@ -275,15 +288,21 @@
 
     <div class="row" style="margin-top: 10px;margin-left: 10px;margin-right: 10px;">
       <div class="col is-center">
-        <div class="card" style="background: rgb(20 51 109);padding: 0px;width: 70vw;height: 45vh;">
+        <div class="card" style="background: rgb(20 51 109);padding: 0px;width: 60vw;height: 40vh;">
           <!-- <header>
             <h4 class="text-center">Temperatura ambiente</h4>
           </header> -->
 
           <div class="row text-center" style="margin-left: 0px;margin-right: 0px;">
-            <div class="col" :class="{'bg-success': activeChannelId === 'ch1'}">
-              <span class="text-center">Temperatura ambiente</span>
+            
+            <div class="col" :class="{'bg-success': activeChannelId === 'ch0'}">
+              <span class="text-center">ch0 - Temperatura da água [[ channels[0].$leitura ]] [[ channels[0].unidade ]]</span>
             </div>
+            
+            <div class="col" :class="{'bg-success': activeChannelId === 'ch1'}">
+              <span class="text-center">ch1 - Temperatura ambiente [[ channels[1].$leitura ]] [[ channels[1].unidade ]]</span>
+            </div>
+
           </div>
           
           <div class="row text-center">
@@ -311,9 +330,6 @@
           <div class="row text-center">
 
             <div class="col-2">
-              <span class="tag is-circle" :class="{'bg-success': activeChannelId === 'ch0'}"><small>T. água (ch1)</small>
-                <div>[[ channels[0].$leitura ]] [[ channels[0].unidade ]]</div>
-              </span>
             </div>
 
             <div class="col-3">
@@ -348,7 +364,7 @@
     </div>
 
     <div v-for="channel in channels" :key="channel.id" class="row">
-      <div class="col is-center" v-show="channel.id === activeChannelId && t > mountTime" style="height: 50vh;width: 80vw;">
+      <div class="col is-center" v-show="channel.id === activeChannelId && t > mountTime" style="max-height: 350px;">
         <canvas :ref="channel.id"></canvas>
       </div>
     </div>
@@ -362,7 +378,7 @@
     createApp({
       watch: {
         gravacaoDeDados (val, prev) {
-          if (val && !prev) {
+          if (!val && prev) {
             console.log('novo ensaio')
             this.channels.forEach(ch => {
               let data = CHARTS[ch.id].data.datasets[0].data
@@ -376,6 +392,17 @@
               
               CHARTS[ch.id].update('none')
             })
+            
+            fetch('/api/gravar_pendrive', {
+              method: 'POST',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({a: 1, b: 'Textual content'})
+            })
+            .then(res => res.json())
+            .then(res => console.log(res))
           }
         }
       },
@@ -395,14 +422,14 @@
           channels: JSON.parse(window.localStorage.getItem('channels')) || [
             {
               id: "ch0",
-              type: "lvdt",
               chart: null,
+              places: 1,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch1",
-              type: "lvdt",
               chart: null,
+              places: 1,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
@@ -413,13 +440,11 @@
             },
             {
               id: "ch3",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch4",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
@@ -431,25 +456,21 @@
             },
             {
               id: "ch6",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch7",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch8",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
             {
               id: "ch9",
-              type: "lvdt",
               chart: null,
               calData: {points: [[0,0],[0,0],[0,0],[0,0]], string: '', r2: null},
             },
@@ -540,7 +561,7 @@
           const ctx = this.$refs[channel.id+'Cal']
           CHARTS[channel.id+'Cal'] = new Chart(ctx, {
             type: 'scatter',
-            responsive: true,
+            responsive: false,
             data: {
               datasets: [{
                 label: 'Pontos informados',
@@ -577,6 +598,9 @@
                   }
                 },
                 y: {
+                  grid: {
+                    display: false
+                  },
                   beginAtZero: false,
                   title: {
                     display: true,
@@ -592,7 +616,7 @@
           //console.log(ctx)
           CHARTS[channel.id] = new Chart(ctx, {
             type: 'line',
-            responsive: true,
+            responsive: false,
             data: {
               datasets: [{
                 // label: '# of Votes',
@@ -621,6 +645,10 @@
               },
               scales: {
                 x: {
+                  grid: {
+                    display: false
+                  },
+
                   // The axis for this scale is determined from the first letter of the id as `'x'`
                   // It is recommended to specify `position` and / or `axis` explicitly.
                   type: 'time',
@@ -632,10 +660,18 @@
                   },
                 },
                 y: {
+                  grid: {
+                    display: true
+                  },
+                  ticks: {
+                    callback: function(value) { 
+                      return value.toFixed(channel.places || 3)
+                    },
+                  },
                   beginAtZero: false,
                   title: {
                     display: true,
-                    text: 'value'
+                    text: channel.unidade
                   }
                 }
               }
@@ -676,7 +712,7 @@
               data[i][0] = rawData[i][0]
               // faz previsão da leitura e grava nos dados do gráfico
               data[i][1] = ch.calData.$predict && !isNaN(ch.calData.r2) ? ch.calData.$predict(rawData[i][1]) : rawData[i][1]
-              ch.$leitura = isNaN(data[i][1]) ? '' : data[i][1].toFixed(3)
+              ch.$leitura = isNaN(data[i][1]) ? '' : data[i][1].toFixed(ch.places || 3)
               
               if (!this.modoAuto && this.t > this.mountTime) {
                 CHARTS[this.activeChannelId].update('none')

@@ -48,18 +48,20 @@ def leitura_adc():
   append_to_data({"read": round(voltages[0], 5)})
 
 
-def modo_automatico(pin):
-  if not GPIO.input(pin):
-    print('modo automatico')
-  else:
-    print('modo manual')
-  append_to_data({"modoAuto": GPIO.input(pin)})
-GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
-GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
+#def modo_automatico(pin):
+#  if not GPIO.input(pin):
+#    print('modo automatico')
+#  else:
+#    print('modo manual')
+#  append_to_data({"modoAuto": GPIO.input(pin)})
+#GPIO.add_event_detect(SAIDAS["MODO"], GPIO.BOTH, bouncetime=200)
+#GPIO.add_event_callback(SAIDAS["MODO"], modo_automatico)
 
 
 def gravacao(pin):
-  if GPIO.input(pin):
+  time.sleep(0.1)
+  state = GPIO.input(pin)
+  if not state:
     print('grava')
     time.sleep(0.1)
     now_str = str(datetime.utcnow()).replace('-','_').replace(' ', '').replace(':', '_').replace('.','_')
@@ -73,7 +75,7 @@ def gravacao(pin):
     print('nao grava')
   append_to_data({"gravacaoDeDados": GPIO.input(pin)})
 
-GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=200)
+GPIO.add_event_detect(SAIDAS["GRAVACAO"], GPIO.BOTH, bouncetime=300)
 GPIO.add_event_callback(SAIDAS["GRAVACAO"], gravacao)
 
 
@@ -87,14 +89,19 @@ def ciclo_canal(pin):
       addr = addr | (0x01 << i)
   
   if GPIO.input(pin):
-    print('\n')
-    print('ciclo_canal prepara')
-    print(f'Estamos no canal: {addr}')
+    #print('\n')
+    #print('ciclo_canal prepara')
+    #print(f'Estamos no canal: {addr}')
+    
     # notamos que se a chave auto/manual for alterada ao mesmo tempo que o pulso do canal é enviado,
     # a status do modo auto/manual é detectado errado. 
-    # Como solução, esperamos um tempo e conferimos a saída do modo auto/manual    
+    # Como solução, esperamos um tempo e conferimos a saída do modo auto/manual
+    # Algo similar acontece com a chave para gravação de dados, mas para ela precisamos monitorar 
+    # a transicao de um modo para outro, por isso temos a variavel gravacao_estado_prev
     time.sleep(0.05)
-    append_to_data({"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"])})
+    data = {"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"])}
+    append_to_data(data)
+    
   else:
     pass
     #print('ciclo_canal ativa')
@@ -113,7 +120,7 @@ def executa_leitura(pin):
   for i, x in enumerate(bits_canais_ativos):
     if x:
       addr = addr | (0x01 << i)
-  print(f"leitura do canal: {addr}")
+  #print(f"leitura do canal: {addr}")
   leitura_adc()
 
     
