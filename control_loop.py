@@ -99,7 +99,7 @@ def ciclo_canal(pin):
     # Algo similar acontece com a chave para gravação de dados, mas para ela precisamos monitorar 
     # a transicao de um modo para outro, por isso temos a variavel gravacao_estado_prev
     time.sleep(0.05)
-    data = {"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"])}
+    data = {"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"]), "gravacaoDeDados": GPIO.input(SAIDAS["GRAVACAO"])}
     append_to_data(data)
     
   else:

@@ -4,6 +4,7 @@ import json
 import time
 import os
 import subprocess
+from datetime import datetime
 try:
   import control_loop
 except Exception as e:
@@ -16,8 +17,21 @@ app = Flask(__name__)
 
 @app.route('/api/gravar_pendrive', methods=['POST'])
 def gravar_pendrive():
+  data = request.get_json()
+  
   res = subprocess.check_output(['ls', '/media/ipt'])
   target_drive = res.decode('utf-8').split('\n')[0]
+  print(data)
+  # write data...
+  now_str = str(datetime.utcnow()).replace('-','_').replace(' ', '').replace(':', '_').replace('.','_')
+  
+  pen_path = f'/media/ipt/{target_drive}'
+  for ch in data.keys():
+    with open(f"{pen_path}/{ch}_{now_str}.csv", "w") as f:
+      f.write(data[ch])
+
+  umount_res = subprocess.check_output(['umount', pen_path])
+  
   
   return jsonify({"target_drive": target_drive})
 

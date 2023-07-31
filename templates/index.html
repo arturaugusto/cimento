@@ -378,18 +378,21 @@
     createApp({
       watch: {
         gravacaoDeDados (val, prev) {
-          if (!val && prev) {
+          if (val && !prev && (this.t > this.mountTime)) {
             console.log('novo ensaio')
+            let payload = {}
             this.channels.forEach(ch => {
               let data = CHARTS[ch.id].data.datasets[0].data
-              data.splice(0,data.length)
-              
               let rawData = CHARTS[ch.id].rawData
-              rawData.splice(0, rawData.length)
               
-              data.push([null, null])
-              rawData.push([null, null])
+              let out = 't;val;adc;cal: ' + ch.calData.string + '\n';
+              data.forEach((row, i) => {
+                if (row[0] !== null) {
+                  out += (`${row[0]};${row[1]};${rawData[1]};\n`).replace(".", ",")
+                }
+              })
               
+              payload[ch.id] = out
               CHARTS[ch.id].update('none')
             })
             
@@ -399,10 +402,24 @@
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({a: 1, b: 'Textual content'})
+              body: JSON.stringify(payload)
             })
             .then(res => res.json())
-            .then(res => console.log(res))
+            .then(res => {
+              console.log(res)
+              if (res['target_drive']) {
+                this.channels.forEach(ch => {
+                  let data = CHARTS[ch.id].data.datasets[0].data
+                  let rawData = CHARTS[ch.id].rawData
+                  
+                  data.splice(0,data.length)
+                  rawData.splice(0, rawData.length)
+                  
+                  data.push([null, null])
+                  rawData.push([null, null])
+                })
+              }
+            })
           }
         }
       },
