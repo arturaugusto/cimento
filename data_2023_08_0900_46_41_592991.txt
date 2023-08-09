@@ -1,0 +1,6 @@
+{}
+{"gravacaoDeDados": 0, "t": 1691542000698}
+{"read": 0.07025, "t": 1691542000863}
+{"activeChannelId": "ch3", "modoAuto": 1, "gravacaoDeDados": 0, "t": 1691542001039}
+{"read": 0.07203, "t": 1691542001123}
+{"read": 0.07232, "t": 1691542001386}
