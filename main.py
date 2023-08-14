@@ -17,6 +17,8 @@ app = Flask(__name__)
 
 @app.route('/api/gravar_pendrive', methods=['POST'])
 def gravar_pendrive():
+  return
+  print("gravar_pendrive")
   data = request.get_json()
   
   res = subprocess.check_output(['ls', '/media/ipt'])
@@ -38,7 +40,7 @@ def gravar_pendrive():
 def event_stream():
   file_size_stored = os.stat('data.txt').st_size
   while True:
-    time.sleep(0.1)
+    #time.sleep(0.1)
     try:
       file_size_current = os.stat('data.txt').st_size
       if file_size_stored != file_size_current:
@@ -74,4 +76,4 @@ def root():
   return render_template('/index.html')
 
 if __name__ == '__main__':
-  app.run('0.0.0.0', debug=False)
+  app.run('0.0.0.0', debug=True)
