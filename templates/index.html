@@ -160,6 +160,7 @@
   <script type="text/javascript" src="{{ url_for('static', filename='luxon.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='chartjs-adapter-luxon.js') }}"></script>
   <script type="text/javascript" src="{{ url_for('static', filename='regression.min.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='toastify-js.js') }}"></script>
 
   <style>
     body.dark {
@@ -191,7 +192,7 @@
         <a class="brand" href="#" style="pointer-events: none;"><img src="{{ url_for('static', filename='logo.svg') }}"></a>
         <!-- <a class="brand" href="#">MEDUSA</a> -->
 
-        <span class="button text-light" :class="{'bg-error': !gravacaoDeDados, 'bg-success': gravacaoDeDados}" style="pointer-events: none;">Gravação: [[ gravacaoDeDados ? "LIGADA" : "DESLIGADA"]]</span>
+        <!-- <span class="button text-light" :class="{'bg-error': !gravacaoDeDados, 'bg-success': gravacaoDeDados}" style="pointer-events: none;">Gravação: [[ gravacaoDeDados ? "LIGADA" : "DESLIGADA"]]</span> -->
 
         <span class="button text-light" :class="{'bg-error': modoAuto, 'bg-success': !modoAuto}" style="pointer-events: none;">Modo: [[ !modoAuto ? "AUTO" : "MANUAL" ]]</span>
         <a class="button primary _outline" @click="mostrarModalCalibracao = true">Ajuste</a>
@@ -386,17 +387,26 @@
     createApp({
       watch: {
         gravacaoDeDados (val, prev) {
-          if (val && !prev && (this.t > this.mountTime)) {
-            console.log('novo ensaio')
+          if (val === 0 && prev === 1 && (this.t > this.mountTime)) {
+            Toastify({
+              text: 'Vire novamente a chave para gravar os dados e iniciar um novo ensaio.',
+              duration: 5000,
+              className: "info",
+              style: {
+                background: "linear-gradient(to right, #00b09b, #96c93d)",
+              }
+            }).showToast();
+          }
+          if (val === 1 && prev === 0 && (this.t > this.mountTime)) {
             let payload = {}
             this.channels.forEach(ch => {
               let data = CHARTS[ch.id].data.datasets[0].data
               let rawData = CHARTS[ch.id].rawData
               
-              let out = 't;val;adc;cal: ' + ch.calData.string + '\n';
+              let out = 't;val;cal: ' + ch.calData.string + '\n';
               data.forEach((row, i) => {
                 if (row[0] !== null) {
-                  out += (`${row[0]};${row[1]};${rawData[1]};\n`).replace(".", ",")
+                  out += (`${row[0]};${row[1]};\n`).replace(".", ",")
                 }
               })
               
@@ -414,7 +424,20 @@
             })
             .then(res => res.json())
             .then(res => {
-              console.log(res)
+
+              Toastify({
+                text: 'Dados salvos no pen drive "' + res.target_drive+'". Você pode remover o pen drive.\nIniciando um novo ensaio.',
+                duration: 5000,
+                className: "info",
+                style: {
+                  background: "linear-gradient(to right, #00b09b, #96c93d)",
+                }
+              }).showToast();
+
+              console.log('novo ensaio')
+
+
+              console.log("dados gravados!", res)
               if (res['target_drive']) {
                 this.channels.forEach(ch => {
                   let data = CHARTS[ch.id].data.datasets[0].data
@@ -427,6 +450,19 @@
                   rawData.push([null, null])
                 })
               }
+            })
+            .catch(res => {
+              Toastify({
+                text: "Erro ao salvar dados. Tente reinserir o pen drive",
+                duration: 5000,
+                className: "info",
+                style: {
+                  background: "linear-gradient(to right, #ff0000, #96c93d)",
+                }
+              }).showToast();
+
+
+              console.log("erro ao gravar dados.")
             })
           }
         }
@@ -513,22 +549,31 @@
         console.log("ok")
         console.log("assinando eventos...")
         
-        fetch('/api/events')
-        .then(res => res.json())
-        .then(eventObjArray => {
-          // eventObjArray.forEach(this.handleEvent)
-          // eventObjArray.forEach((evt) => console.log("evt!"))
+        //fetch('/api/events')
+        //.then(res => res.json())
+        //.then(eventObjArray => {
+        //  eventObjArray.forEach(this.handleEvent)
           
-          // aguarda eventos
-          const evtSource = new EventSource("/api/stream");
-          evtSource.onerror = (e) => {
-            console.log(e)
-          }
-          evtSource.onmessage = (e) => {
-            let eventObj = JSON.parse(e.data)
-            this.handleEvent(eventObj)
-          };
-        })
+        //  // aguarda eventos
+        //  const evtSource = new EventSource("/api/stream");
+        //  evtSource.onerror = (e) => {
+        //    console.log(e)
+        //  }
+        //  evtSource.onmessage = (e) => {
+        //    let eventObj = JSON.parse(e.data)
+        //    this.handleEvent(eventObj)
+        //  };
+        //})
+
+        // aguarda eventos
+        const evtSource = new EventSource("/api/stream");
+        evtSource.onerror = (e) => {
+          console.log(e)
+        }
+        evtSource.onmessage = (e) => {
+          let eventObj = JSON.parse(e.data)
+          this.handleEvent(eventObj)
+        };
 
         this.channels.forEach(ch => {
           this.createPredict(ch)
@@ -536,7 +581,6 @@
         
         window.setTimeout(() => {
           this.mountTime = Date.now()
-          // this.mountTime = 1690906858015
           this.isReady = true
         }, 3000)
 
@@ -737,12 +781,12 @@
               let rawData = CHARTS[this.activeChannelId].rawData
 
               let i = rawData.length-1
-              rawData[i][0] ||= eventObj.t
-              rawData[i][1] ||= eventObj.read
-              rawData[i][1] = rawData[i][1]*0.4 + eventObj.read*0.6
+              //rawData[i][0] ||= eventObj.t
+              //rawData[i][1] ||= eventObj.read
+              //rawData[i][1] = rawData[i][1]*0.4 + eventObj.read*0.6
 
-              // rawData[i][0] = eventObj.t
-              // rawData[i][1] = eventObj.read
+              rawData[i][0] = eventObj.t
+              rawData[i][1] = eventObj.read
 
               
               // grava ultima leitura estabilizada para uso em dados de calibração

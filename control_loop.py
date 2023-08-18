@@ -29,6 +29,7 @@ ads = ADS1256(waveshare_config)
 ads.drate = DRATE_30000
 #ads.drate = DRATE_2000
 #ads.drate = DRATE_15
+#ads.drate = DRATE_5
 
 def append_to_data(obj):
   with open("data.txt", "a") as myfile:

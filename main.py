@@ -39,7 +39,7 @@ def gravar_pendrive():
 def event_stream():
   file_size_stored = os.stat('data.txt').st_size
   while True:
-    #time.sleep(0.1)
+    time.sleep(0.1)
     try:
       file_size_current = os.stat('data.txt').st_size
       if file_size_stored != file_size_current:

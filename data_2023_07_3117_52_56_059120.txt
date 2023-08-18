@@ -1,7 +1,0 @@
-{}
-{"gravacaoDeDados": 0, "t": 1690825975743}
-{"gravacaoDeDados": 0, "t": 1690825975743}
-{"activeChannelId": "ch0", "modoAuto": 1, "t": 1690825975794}
-{"activeChannelId": "ch0", "modoAuto": 1, "t": 1690825975794}
-{"read": 0.0, "t": 1690825975806}
-{"read": 0.0, "t": 1690825975808}
