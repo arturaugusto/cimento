@@ -17,7 +17,6 @@ app = Flask(__name__)
 
 @app.route('/api/gravar_pendrive', methods=['POST'])
 def gravar_pendrive():
-  return
   print("gravar_pendrive")
   data = request.get_json()
   
