@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Medusa
+Exec=sh /home/ipt/cimento/start.sh
+

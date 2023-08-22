@@ -24,6 +24,12 @@ SAIDAS = {
   "EXECUTA_LEITURA": 5
 }
 
+# leituras desde ultuma troca de canal
+READ_STATE = {
+  "N": 0
+}
+
+
 # inicializa ADC
 ads = ADS1256(waveshare_config)
 ads.drate = DRATE_30000
@@ -99,6 +105,7 @@ def ciclo_canal(pin):
     # Como solução, esperamos um tempo e conferimos a saída do modo auto/manual
     # Algo similar acontece com a chave para gravação de dados, mas para ela precisamos monitorar 
     # a transicao de um modo para outro, por isso temos a variavel gravacao_estado_prev
+    READ_STATE["N"] = 0
     time.sleep(0.05)
     data = {"activeChannelId": f"ch{addr}", "modoAuto": GPIO.input(SAIDAS["MODO"]), "gravacaoDeDados": GPIO.input(SAIDAS["GRAVACAO"])}
     append_to_data(data)
@@ -115,6 +122,7 @@ GPIO.add_event_callback(SAIDAS["CICLO_CANAL"], ciclo_canal)
 
 
 def executa_leitura(pin):
+  READ_STATE["N"] += 1
   bits_canais_ativos = [GPIO.input(x) for x in CH_ADDR_PINS]
   addr = 0x00
   #print(bits_canais_ativos)
@@ -122,7 +130,9 @@ def executa_leitura(pin):
     if x:
       addr = addr | (0x01 << i)
   #print(f"leitura do canal: {addr}")
-  leitura_adc()
+  # executa leitura apenas na contagem
+  if READ_STATE["N"] == 5:
+    leitura_adc()
 
     
 GPIO.add_event_detect(SAIDAS["EXECUTA_LEITURA"], GPIO.RISING, bouncetime=200)
